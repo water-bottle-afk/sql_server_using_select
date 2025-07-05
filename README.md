@@ -94,9 +94,11 @@ This project is a solid learning experience in:
 ```cmd
 python server.py
 # Follow instructions for debug mode
+```
 
 # Then run a client
 # in another tab
+```cmd
 python client.py
 ```
 
