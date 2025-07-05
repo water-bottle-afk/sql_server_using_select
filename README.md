@@ -58,31 +58,9 @@ Result: returns all planets discovered by `yossi` in **all** galaxies due to com
 
 * ✅ Use **parameterized queries** to prevent SQL injection
 * ⛔ Sanitize and validate all client input
-* 🔐 Implement **authentication** or session tokens
 
 ### 📚 Code Quality
-
-* 📁 Refactor with modules: `validators.py`, `protocol.py`, `handlers.py`
 * ✅ Follow **PEP8** style guide
-* 🧪 Add unit tests using `unittest` or `pytest`
-
-### ⚙️ Architecture
-
-* 📦 Use **class-based dispatch** instead of `dict_of_functions`
-* 📂 Load config from `.env` or `config.json`
-* 🔄 Use structured logging (`logging` module) over `print`
-
-### 🌐 Networking
-
-* 🔌 Add **TLS encryption** with `ssl`
-* ⏭️ Migrate to **asyncio** for scalable async support
-
-### 🖥️ Client-Side Enhancements
-
-* 🌍 Build a **web GUI** with Flask
-* 🌐 Add a RESTful API layer
-
----
 
 ## 📁 Project Structure Example
 
@@ -93,10 +71,8 @@ sql_server_using_select/
 ├── server.py
 ├── client.py
 ├── tcp_by_size.py
-├── validators.py          # (optional) extract validation logic
-├── config.json            # (optional) for constants like port, DB path
-├── test_server.py         # (optional) tests
-└── README.md
+
+├── README.md
 ```
 
 ---
@@ -113,23 +89,22 @@ This project is a solid learning experience in:
 
 ---
 
-## 📩 Getting Started
+## How to Run?
 
-```bash
-# Run the server
-$ python server.py
-
+```cmd
+python server.py
 # Follow instructions for debug mode
 
 # Then run a client
-$ python client.py
+# in another tab
+python client.py
 ```
 
 ---
 
 ## 🧑‍💻 Author
 
-Created by **Nadav**
+Created by **water-bottle-afk**
 © 2025 — for educational and development purposes.
 
 ---
