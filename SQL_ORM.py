@@ -1,9 +1,8 @@
 import json
 import sqlite3
+from dataclasses import dataclass
 
 __author__ = 'Nadav'
-
-DEBUG = True
 
 # the injection can be at option 4 [html_sql_client.py] -> explorer: yossi'--, galaxy = x
 # the result will show all the planets where discovered by yossi in all the galaxies.
@@ -12,35 +11,30 @@ DEBUG = True
 planets_by_explorer_and_galaxy_injection_safe = False
 
 
-class Planet(object):
-    def __init__(self, name_of_planet, has_water, radius, distance_from_earth, popularity):
-        self.name_of_planet = name_of_planet
-        self.radius = radius
-        self.distance_from_earth = distance_from_earth
-        self.has_water = has_water
-        self.popularity = popularity
+@dataclass
+class Planet:
+    name_of_planet: str
+    has_water: int
+    radius: float
+    distance_from_earth: float
+    popularity: int
 
     def __repr__(self):
         return (f"Planet: [Name:{self.name_of_planet}, Has Water:{'True' if self.has_water == 1 else 'False'}, "
                 f"Radius:{self.radius}, Distance:{self.distance_from_earth}, Popularity:{self.popularity}]")
 
 
-class Archive(object):
-    def __init__(self, doc_id, date_of_publish, galaxy, explorer_name, planet_name):
-        self.doc_id = doc_id
-        self.date_of_publish = date_of_publish
-        self.galaxy = galaxy
-        self.explorer_name = explorer_name
-        self.planet_name = planet_name
+@dataclass
+class Archive:
+    doc_id: int
+    date_of_publish: str
+    galaxy: str
+    explorer_name: str
+    planet_name: str
 
     def __repr__(self):
         return (f"Archive: [Document ID: {self.doc_id}, Date of Publish: {self.date_of_publish}, "
                 f"Galaxy: {self.galaxy}, Explorer: {self.explorer_name}, Planet Name: {self.planet_name}]")
-
-
-def print_all_rows(rows):
-    for row in rows:
-        print(row)
 
 
 class Nadav_ORM:
@@ -52,6 +46,11 @@ class Nadav_ORM:
         self.debug = debug
         self.planet_kwargs = ["name_of_planet", "has_water", "radius", "distance_from_earth", "popularity"]
         self.archive_kwargs = ["doc_id", "date_of_publish", "galaxy", "explorer_name", "planet_name"]
+
+    def print_all_rows(self, rows):
+        if self.debug:
+            for row in rows:
+                print(row)
 
     def debug_print(self, data, always=False):
         if self.debug or always:
@@ -89,7 +88,7 @@ class Nadav_ORM:
             if 'select' == sql.split()[0].lower():  # if select
                 items = res.fetchall()
                 rows = len(items)
-                print_all_rows(items)
+                self.print_all_rows(items)
                 self.debug_print(f"Amount of rows: {rows}")
             else:  # rows
                 rows = res.rowcount
@@ -220,7 +219,7 @@ class Nadav_ORM:
     def insert_new_planet(self, planet_name, has_water, radius, distance_from_earth, popularity, **kwargs):
         # **kwargs used of the unneeded value at the key "Query" of the dict_msg.
         # more convenient for me to pop the vars using **dict_msg in the server side
-
+        self.debug_print(f"Preforming: {kwargs}")
         sql = ("INSERT INTO planets (name_of_planet, has_water, radius, distance_from_earth, popularity) "
                "VALUES (?, ?, ?, ?, ?)")
         error, rows, items = (self.perform_query
@@ -235,11 +234,13 @@ class Nadav_ORM:
                               "Rows-affected": rows})
         return msg
 
-    def insert_new_archive_obj(self, planets_name, date, galaxy, explorer):
+    def insert_new_archive_obj(self, planet_name, date, galaxy, explorer, **kwargs):
+        self.debug_print(f"Preforming: {kwargs}")
+
         sql = ("INSERT INTO archive (date_of_publish, galaxy, explorer_name, planet_name) "
                "VALUES (?, ?, ?, ?)")
         error, rows, items = (self.perform_query
-                              (sql, (date, galaxy, explorer, planets_name), True))
+                              (sql, (date, galaxy, explorer, planet_name), True))
 
         if rows == 1 and error == "":
             msg = json.dumps({"Subject": "Updated", "info": "The server updated the database.",
@@ -265,8 +266,7 @@ class Nadav_ORM:
                            "Rows-affected": rows})
 
     def update_archive_obj(self, explorer_to_check, galaxy_to_check, explorer, date, galaxy, planets_name, **kwargs):
-        # **kwargs used of the unneeded value at the key "Query" of the dict_msg.
-        # more convenient for me to pop the vars using **dict_msg in the server side
+        self.debug_print(f"Preforming: {kwargs}")
 
         sql = ("Update archive SET date_of_publish=?, galaxy=?, explorer_name=?, planet_name=? "
                "WHERE explorer_name=? AND galaxy=?")
@@ -324,13 +324,3 @@ class Nadav_ORM:
         return json.dumps({"Subject": "NO RESULTS!", "info": f"Unsuccessful try."
                                                              f" The server didn't delete from the database.",
                            "Rows-affected": rows})
-
-
-def main_test():
-    db = Nadav_ORM("Database", DEBUG)
-    x = db.insert_new_archive_obj("Earth", 3, 4, 5)
-    print(x)
-
-
-if __name__ == "__main__":
-    main_test()
