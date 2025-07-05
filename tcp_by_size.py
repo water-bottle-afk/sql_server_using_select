@@ -7,20 +7,19 @@ import json
 SIZE_HEADER_FORMAT = "0000|"  # n digits for data size + one delimiter
 size_header_size = len(SIZE_HEADER_FORMAT)
 
-DEBUG = True
-
 
 # The injection can be at option 4 [html_sql_client.py] -> explorer: yossi'--, galaxy = x
 # The result will show all the planets where discovered by yossi in all the galaxies.
 
-def debug_print(data, always=False, end="\n"):
-    if DEBUG or always:
-        print(data, end=end)
-
 
 class PROTO:
-    def __init__(self, sock):
+    def __init__(self, sock, debug=True):
         self.sock = sock
+        self.debug = debug
+
+    def debug_print(self, data, always=False, end="\n"):
+        if self.debug or always:
+            print(data, end=end)
 
     def recv_by_size(self):  # return a json formatted data, & True if got un matched values type, False otherwise
         try:
@@ -44,8 +43,8 @@ class PROTO:
 
             if size_header != b'':
                 msg = data.decode()
-                debug_print(f"Recv({len(msg)}):", end="\t")
-                debug_print(msg)
+                self.debug_print(f"Recv({len(msg)}):", True, end="\t")
+                self.debug_print(msg,True)
 
                 dict_msg = json.loads(msg)
 
@@ -58,7 +57,7 @@ class PROTO:
                             val = float(val)
                             dict_msg[key] = val
                     except Exception as e:
-                        debug_print(f"The client sent a wrong type of data. {e}")
+                        self.debug_print(f"The client sent a wrong type of data. {e}")
                         return dict_msg, True
 
                 return dict_msg, False
@@ -70,24 +69,23 @@ class PROTO:
             return None, False  # for disconnection
 
         except Exception as e:
-            debug_print(f"Error occurred during receiving! {e}", True)
+            self.debug_print(f"Error occurred during receiving! {e}", True)
             return None, False
 
     def send_with_size(self, data):  # gets a json formatted data
         try:
             # bdata = json.dumps(data)
-            bdata = data
-            len_data = len(bdata)
-            header_data = str(len(bdata)).zfill(size_header_size - 1) + "|"
+            len_data = len(data)
+            header_data = str(len(data)).zfill(size_header_size - 1) + "|"
 
-            bytea = header_data + bdata
-            bytea = bytea.encode()
-            self.sock.send(bytea)
+            bdata = header_data + data
+            bdata = bdata.encode()
+            self.sock.send(bdata)
             if len_data > 0:
-                debug_print(f"Sent({len_data}):", end="\t")
-                debug_print(bdata)
+                self.debug_print(f"Sent({len_data}):", True, end="\t")
+                self.debug_print(data, True)
         except Exception as e:
-            debug_print(f"Error occurred during sending! {e}", True)
+            self.debug_print(f"Error occurred during sending! {e}", True)
             return None
 
     def close(self):
