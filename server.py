@@ -22,7 +22,8 @@ class Server:
         self.read_sockets = None
         self.to_continue = None
         self.db = db
-        self.proto = PROTO(sock)
+        global DEBUG
+        self.proto = PROTO(sock, DEBUG)
         self.dict_of_functions = {
             "GETPLT": self.manage_get_all_planets,
             "GETARH": self.manage_get_all_archive,
