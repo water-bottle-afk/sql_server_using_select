@@ -5,13 +5,15 @@ from tcp_by_size import PROTO
 import json
 import webbrowser
 
-DEBUG = True
-global file_path
+DEBUG = False
 file_path = "answer.html"
 
 
 # the injection can be at option 4 -> explorer: yossi'--, galaxy = x
 # the result will show all the planets where discovered by yossi in all the galaxies.
+
+# bcz of "habits" im keeping the debug_print although i dont use it debug printing in the client side.
+# which means that in this side each log/output is important and all uses param always=True.
 
 def debug_print(data, always=False):
     if DEBUG or always:
@@ -223,10 +225,21 @@ def main():
     try:
         sock.connect(("127.0.0.1", 33445))
         proto = PROTO(sock)
+
+        # for future. in this side, each log/output is important and all uses param always=True.
+        # choose_debug = int(input("Use Debug Mode? [0=No, 1=Yes]> "))
+        # global DEBUG
+        # if choose_debug == 1:
+        #     DEBUG = True
+        # elif choose_debug == 0:
+        #     DEBUG = False
+        # else:
+        #     raise ValueError("Choice must be 0 or 1.")
+
         while True:
             data_to_send = menu()
             proto.send_with_size(data_to_send)
-            received, flag = proto.recv_by_size() # flag used only in the server's side.
+            received, flag = proto.recv_by_size()  # flag used only in the server's side.
             create_html(received)
 
             if received is None or received is not None and "EXIT OK" in received.values():
