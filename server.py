@@ -6,7 +6,8 @@ import select
 import SQL_ORM
 from tcp_by_size import PROTO
 
-DEBUG = True
+DEBUG = False
+DB_NAME = "Database"
 
 
 # the injection can be at option 4 [html_sql_client.py] -> explorer: yossi'--, galaxy = x
@@ -102,22 +103,22 @@ class Server:
                               "Rows-affected": 0})
         return msg
 
-    def manage_exit(self, dict_msg):
+    def manage_exit(self, data):
         return json.dumps({"Subject": "EXIT OK", "info": "you are disconnected."})
 
-    def manage_get_all_planets(self, dict_msg):
+    def manage_get_all_planets(self, data):
         msg = self.db.get_all_planets()
         return msg
 
-    def manage_get_planets_with_e_and_a(self, dict_msg):
+    def manage_get_planets_with_e_and_a(self, data):
         msg = self.db.get_planets_with_e_and_a()
         return msg
 
-    def manage_get_all_archive(self, dict_msg):
+    def manage_get_all_archive(self, data):
         msg = self.db.get_all_archive()
         return msg
 
-    def manage_get_biggest_three_planets_with_water(self, dict_msg):
+    def manage_get_biggest_three_planets_with_water(self, data):
         msg = self.db.get_3_biggest_planets_with_water()
         return msg
 
@@ -151,7 +152,7 @@ class Server:
                                                           f". A problem with the input, try again.",
                               "Rows-affected": 0})
         else:
-            msg = self.db.insert_new_archive_obj(planets_name, date, galaxy, explorer)
+            msg = self.db.insert_new_archive_obj(**dict_msg)
         return msg
 
     def manage_update_archive_info(self, dict_msg):
@@ -228,7 +229,7 @@ class Server:
 
     def manage_x_list(self, x_list):
         for sock in x_list:
-            debug_print(f"Socket error, closing {sock}")
+            debug_print(f"Socket error, closing client no. {self.dict_of_id[sock][0]} sock")
             if sock in self.read_sockets:
                 self.read_sockets.remove(sock)
             if sock in self.write_sockets:
@@ -274,7 +275,7 @@ class Server:
 
     def handle_client_disconnected(self, data, prot, sock):
         prot.close()
-        debug_print(f"Connection closed with client num {self.dict_of_id[sock][0]}")
+        debug_print(f"Connection closed with client no. {self.dict_of_id[sock][0]}")
         del self.dict_of_id[sock]
         if sock in self.read_sockets:
             self.read_sockets.remove(sock)
@@ -293,19 +294,30 @@ class Server:
                     self.manage_client_exited(sock, prot)
 
     def manage_client_exited(self, sock, prot):
-        debug_print("Closing the socket")
+        debug_print(f"Closing the socket of client no. {self.dict_of_id[sock][0]}")
         self.read_sockets.remove(sock)
         del self.dict_of_id[sock]
         prot.close()
 
 
 def main():
-    db = SQL_ORM.Nadav_ORM("Database", True)
-    server_socket = socket.socket()
-    server_socket.bind(("0.0.0.0", 33445))
-    server_socket.listen(4)
-    srv = Server(server_socket, db)
-    srv.run_srv()
+    try:
+        choose_debug = int(input("Use Debug Mode? [0=No, 1=Yes]> "))
+        global DEBUG
+        if choose_debug == 1:
+            DEBUG = True
+        elif choose_debug == 0:
+            DEBUG = False
+        else:
+            raise ValueError("Choice must be 0 or 1.")
+        db = SQL_ORM.Nadav_ORM(DB_NAME, DEBUG)
+        server_socket = socket.socket()
+        server_socket.bind(("0.0.0.0", 33445))
+        server_socket.listen(4)
+        srv = Server(server_socket, db)
+        srv.run_srv()
+    except Exception as e:
+        debug_print(f"ERROR. {e}",True)
 
 
 if __name__ == "__main__":
