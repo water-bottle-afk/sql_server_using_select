@@ -12,10 +12,11 @@ file_path = "answer.html"
 # the injection can be at option 4 -> explorer: yossi'--, galaxy = x
 # the result will show all the planets where discovered by yossi in all the galaxies.
 
-# bcz of "habits" im keeping the debug_print although i dont use it debug printing in the client side.
-# which means that in this side each log/output is important and all uses param always=True.
+# bcz of "habits" im keeping the function [debug_print] although i dont use it debug printing in the client side.
+# which means that in this side, each log/output is important and all uses param always=True.
 
 def debug_print(data, always=False):
+    """custom printing function"""
     if DEBUG or always:
         print(data)
 
@@ -239,10 +240,10 @@ def main():
         while True:
             data_to_send = menu()
             proto.send_with_size(data_to_send)
-            received, flag = proto.recv_by_size()  # flag used only in the server's side.
-            create_html(received)
+            received_data = proto.recv_by_size()
+            create_html(received_data)
 
-            if received is None or received is not None and "EXIT OK" in received.values():
+            if received_data is None or (received_data is not None and "EXIT OK" in received_data.values()):
                 debug_print("Exits...", True)
                 break
     except Exception as e:
