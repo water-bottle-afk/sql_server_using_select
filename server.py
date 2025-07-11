@@ -13,6 +13,26 @@ DB_NAME = "Database"
 # the injection can be at option 4 [html_sql_client.py] -> explorer: yossi'--, galaxy = x
 # the result will show all the planets where discovered by yossi in all galaxies.
 
+
+def full_validate(func):
+    """
+    decorator to validate the parameters type/values..
+    @full_validdate
+    def function(...)
+    sets function = full_validate(function) => wrapper
+    when calling function(self, dict_msg) it does wrapper(self, dict_msg)
+    """
+
+    def wrapper(self, dict_msg):
+        if not self.validate_values(**dict_msg):
+            return json.dumps({
+                "Subject": "ERROR - INPUT",
+                "info": "A problem with the input, try again.",
+                "Rows-affected": 0})
+        return func(self,dict_msg)
+
+    return wrapper
+
 class Server:
     def __init__(self, sock, db):
         self.idx = None
@@ -42,6 +62,7 @@ class Server:
 
     @staticmethod
     def debug_print(data, always=False):
+        """custom printing function"""
         if DEBUG or always:
             print(data)
 
@@ -53,7 +74,8 @@ class Server:
             "explorer": self.check_str,
             "galaxy": self.check_str,
             "date": self.check_date,
-            "popularity": self.check_popularity,
+            "popularity": self.check_int,
+            "new_popularity": self.check_int,
             "distance_from_earth": self.check_distance_from_earth,
             "radius": self.check_radius,
             "has_water": self.check_has_water
@@ -75,30 +97,45 @@ class Server:
 
     @staticmethod
     def check_has_water(has_water):
-        if has_water is not None and not (0 <= has_water <= 1):
-            return False
+        # water is 0 or 1
+        if has_water is not None:
+            try:
+                has_water = int(has_water)
+                return has_water == 0 or has_water == 1
+            except Exception:
+                return False
         return True
 
     @staticmethod
-    def check_radius(radius):
-        if (radius is not None and
-                (not (type(radius) is int or type(radius) is float)  # not int or float
-                 or radius < 0)):
-            return False
+    def check_radius(radiues):
+        # when used in distance from earth
+        if radiues is not None:
+            try:
+                number = float(radiues)
+                return number > 0
+            except Exception:
+                return False
         return True
 
     @staticmethod
-    def check_distance_from_earth(distance_from_earth):
-        if (distance_from_earth is not None and
-                (not (type(distance_from_earth) is int or type(distance_from_earth) is float)
-                 or distance_from_earth < 0)):
-            return False
+    def check_distance_from_earth(distance):
+        # when used in distance from earth
+        if distance is not None:
+            try:
+                number = float(distance)
+                return number >= 0
+            except Exception:
+                return False
         return True
 
     @staticmethod
-    def check_popularity(popularity):
-        if popularity is not None and (not (type(popularity) is int) or popularity < 0):
-            return False
+    def check_int(number):
+        if number is not None:
+            try:
+                number = int(number)
+                return number >= 0
+            except Exception:
+                return False
         return True
 
     def check_date(self, date):
@@ -120,17 +157,12 @@ class Server:
                 return False
         return True
 
+    @full_validate
     def manage_update_planets_popularity(self, dict_msg):
         planet_name = dict_msg["planet_name"]
         new_popularity = dict_msg["new_popularity"]
 
-        if self.validate_values(planet_name=planet_name, popularity=new_popularity):
-            msg = self.db.update_planet_popularity(planet_name, new_popularity)
-        else:
-            msg = json.dumps({"Subject": "ERROR", "info": f"The server didn't updated the database"
-                                                          f". A problem with the input, try again.",
-                              "Rows-affected": 0})
-        return msg
+        return self.db.update_planet_popularity(planet_name, new_popularity)
 
     def manage_exit(self, data):
         return json.dumps({"Subject": "EXIT OK", "info": "you are disconnected."})
@@ -151,59 +183,33 @@ class Server:
         msg = self.db.get_3_biggest_planets_with_water()
         return msg
 
+    @full_validate
     def manage_get_planets_by_explorer_and_galaxy(self, dict_msg):
-        msg = self.db.get_planets_by_explorer_and_galaxy(dict_msg["explorer"], dict_msg["galaxy"])
+        explorer = dict_msg["explorer"]
+        galaxy = dict_msg["galaxy"]
+        msg = self.db.get_planets_by_explorer_and_galaxy(explorer,galaxy)
         return msg
 
+    @full_validate
     def manage_insert_new_planet(self, dict_msg):
-        if not self.validate_values(**dict_msg):
-            msg = json.dumps({"Subject": "ERROR", "info": f"The server didn't updated the database"
-                                                          f". A problem with the input, try again.",
-                              "Rows-affected": 0})
-        else:
-            msg = self.db.insert_new_planet(**dict_msg)
-        return msg
-
+         return self.db.insert_new_planet(**dict_msg)
+    @full_validate
     def manage_insert_new_archive_info(self, dict_msg):
-        if not self.validate_values(**dict_msg):
-            msg = json.dumps({"Subject": "ERROR", "info": f"The server didn't updated the database"
-                                                          f". A problem with the input, try again.",
-                              "Rows-affected": 0})
-        else:
-            msg = self.db.insert_new_archive_obj(**dict_msg)
-        return msg
-
+        return self.db.insert_new_archive_obj(**dict_msg)
+    @full_validate
     def manage_update_archive_info(self, dict_msg):
-        if not self.validate_values(**dict_msg):
-            msg = json.dumps({"Subject": "ERROR", "info": f"The server didn't updated the database"
-                                                          f". A problem with the input, try again.",
-                              "Rows-affected": 0})
-        else:
-            msg = self.db.update_archive_obj(**dict_msg)
-        return msg
+        return self.db.update_archive_obj(**dict_msg)
 
+    @full_validate
     def manage_delete_archive_info(self, dict_msg):
         explorer = dict_msg["explorer"]
         galaxy = dict_msg["galaxy"]
+        return self.db.delete_archive_by_explorer_and_galaxy(explorer, galaxy)
 
-        if not self.validate_values(**dict_msg):
-            msg = json.dumps({"Subject": "ERROR", "info": f"The server didn't deleted the database"
-                                                          f". A problem with the input, try again.",
-                              "Rows-affected": 0})
-        else:
-            msg = self.db.delete_archive_by_explorer_and_galaxy(explorer, galaxy)
-        return msg
-
+    @full_validate
     def manage_delete_planet(self, dict_msg):
         planet_name = dict_msg["planet_name"]
-
-        if not self.validate_values(**dict_msg):
-            msg = json.dumps({"Subject": "ERROR", "info": f"The server didn't deleted the database"
-                                                          f". A problem with the input, try again.",
-                              "Rows-affected": 0})
-        else:
-            msg = self.db.delete_planet(planet_name)
-        return msg
+        return self.db.delete_planet(planet_name)
 
     def do_action(self, data, idx):
         """
@@ -262,19 +268,15 @@ class Server:
     def handle_reading_client_sock(self, sock):
         try:
             prot = self.dict_of_id[sock][1]
-            data, got_unmatched_values = prot.recv_by_size()
+            data = prot.recv_by_size()
+
             if data is None:
                 self.handle_client_disconnected(data, prot, sock)
-            else:
-                if got_unmatched_values:
-                    msg_to_send = json.dumps({"Subject": "ERROR", "info": f"The server didn't deleted the "
-                                                                          f"database. A problem with the input, try "
-                                                                          f"again.",
-                                              "Rows-affected": 0})
-                else:
-                    msg_to_send = self.do_action(data, self.dict_of_id[sock][0])
-                self.messages_to_send.append((sock, msg_to_send))
-                self.write_sockets.append(sock)
+                return
+
+            msg_to_send = self.do_action(data, self.dict_of_id[sock][0])
+            self.messages_to_send.append((sock, msg_to_send))
+            self.write_sockets.append(sock)
 
         except Exception as e:
             sock.close()
