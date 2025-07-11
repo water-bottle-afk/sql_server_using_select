@@ -18,10 +18,11 @@ class PROTO:
         self.debug = debug
 
     def debug_print(self, data, always=False, end="\n"):
+        """custom printing function"""
         if self.debug or always:
             print(data, end=end)
 
-    def recv_by_size(self):  # return a json formatted data, & True if got un matched values type, False otherwise
+    def recv_by_size(self):  # return a json formatted data
         try:
             size_header = b''
             data_len = 0
@@ -44,33 +45,20 @@ class PROTO:
             if size_header != b'':
                 msg = data.decode()
                 self.debug_print(f"Recv({len(msg)}):", True, end="\t")
-                self.debug_print(msg,True)
+                self.debug_print(msg, True)
 
                 dict_msg = json.loads(msg)
-
-                for key, val in dict_msg.items():  # returning to the type before the json operation
-                    try:
-                        if key in ["has_water", "popularity", "new_popularity"]:
-                            val = int(val)
-                            dict_msg[key] = val
-                        elif key in ["radius", "distance_from_earth"]:
-                            val = float(val)
-                            dict_msg[key] = val
-                    except Exception as e:
-                        self.debug_print(f"The client sent a wrong type of data. {e}")
-                        return dict_msg, True
-
-                return dict_msg, False
+                return dict_msg
 
             if data_len != len(data):
-                msg = ""  # Partial data is like no data !
-                return json.loads(msg), False
+                msg = ""  # partial data is like no data !
+                return json.loads(msg)
 
-            return None, False  # for disconnection
+            return None  # disconnection
 
         except Exception as e:
             self.debug_print(f"Error occurred during receiving! {e}", True)
-            return None, False
+            return None
 
     def send_with_size(self, data):  # gets a json formatted data
         try:
